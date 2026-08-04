@@ -4,9 +4,9 @@ from flask import Flask, render_template, request, jsonify
 app = Flask(_name_)
 
 # Ruta de prueba principal
-@app.route('/')
+2am@app.route('/')
 def inicio():
-    return "✅ ¡Sistema Nexora funcionando correctamente!"
+    return "✅ Sistema Nexora funcionando correctamente!"
 
 # Ejecutar la app en Render
 if _name_ == "_main_":
