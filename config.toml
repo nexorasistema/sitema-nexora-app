@@ -1,0 +1,6 @@
+tools = [
+  "python@3.12.7",   # En vez de la 3.14.3 (muy reciente, da errores)
+  "ruby@3.3.8",      # En vez de la 3.4.8
+  "go@1.23.5",       # En vez de la 1.26.2
+  "node@22.14.0"     # En vez de la 24.19.0 (la principal causa del fallo)
+]
