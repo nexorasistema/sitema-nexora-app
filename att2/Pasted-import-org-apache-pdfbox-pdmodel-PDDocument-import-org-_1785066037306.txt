@@ -1,0 +1,227 @@
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import java.awt.Color;
+import java.io.IOException;
+
+public class GenerarCotizacionEstructurada {
+    public static void main(String[] args) {
+        try (PDDocument documento = new PDDocument()) {
+            // Establecer hoja en formato A4
+            PDPage pagina = new PDPage(PDRectangle.A4);
+            documento.addPage(pagina);
+
+            try (PDPageContentStream contenido = new PDPageContentStream(documento, pagina)) {
+                // Configuración general de fuente y márgenes
+                contenido.setFont(PDType1Font.HELVETICA, 10);
+                float margenIzquierdo = 40;
+                float posicionY = 820;
+                float espacioEntreLineas = 16;
+
+                // ------------------------------
+                // 1. CABECERA DE LA COTIZACIÓN
+                // ------------------------------
+                contenido.setFont(PDType1Font.HELVETICA_BOLD, 9);
+                contenido.setNonStrokingColor(Color.BLACK);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("CONSTRUCCIÓN KATTYA");
+                contenido.endText();
+
+                contenido.beginText();
+                contenido.newLineAtOffset(380, posicionY);
+                contenido.showText("Cotización Inmobiliaria");
+                contenido.endText();
+                posicionY -= espacioEntreLineas;
+
+                contenido.setFont(PDType1Font.HELVETICA, 8);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("Teléfono: 04128582593 | Correo: kattyaconlosa@gmail.com");
+                contenido.endText();
+
+                contenido.beginText();
+                contenido.newLineAtOffset(380, posicionY);
+                contenido.showText("24 de Julio de 2026");
+                contenido.endText();
+                posicionY -= espacioEntreLineas * 2;
+
+                // ------------------------------
+                // 2. SECCIÓN DE DESCRIPCIÓN Y PROYECTO
+                // ------------------------------
+                contenido.setFont(PDType1Font.HELVETICA_BOLD, 10);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("DESCRIPCIÓN: MODULO 2 KATTYA CON LOSA");
+                contenido.endText();
+                posicionY -= espacioEntreLineas * 2;
+
+                contenido.setFont(PDType1Font.HELVETICA, 11);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("Bosquetto 2");
+                contenido.endText();
+
+                contenido.setFont(PDType1Font.HELVETICA_BOLD, 16);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY - 18);
+                contenido.showText("Kattya con Losa");
+                contenido.endText();
+
+                contenido.setFont(PDType1Font.HELVETICA_BOLD, 14);
+                contenido.beginText();
+                contenido.newLineAtOffset(420, posicionY);
+                contenido.showText("$68,590");
+                contenido.endText();
+                posicionY -= espacioEntreLineas * 4;
+
+                // ------------------------------
+                // 3. DATOS GENERALES
+                // ------------------------------
+                contenido.setFont(PDType1Font.HELVETICA, 9);
+                String[][] datosGenerales = {
+                    {"Área Total", "5730 m²"},
+                    {"Precio por m²", "$97.72"},
+                    {"Modelo", "Kattya con Losa"},
+                    {"N° de Plantas", "2"}
+                };
+
+                for (String[] fila : datosGenerales) {
+                    contenido.beginText();
+                    contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                    contenido.showText(fila[0]);
+                    contenido.endText();
+
+                    contenido.beginText();
+                    contenido.newLineAtOffset(200, posicionY);
+                    contenido.showText(fila[1]);
+                    contenido.endText();
+                    posicionY -= espacioEntreLineas;
+                }
+                posicionY -= espacioEntreLineas;
+
+                // ------------------------------
+                // 4. PLAN DE FINANCIAMIENTO
+                // ------------------------------
+                contenido.setFont(PDType1Font.HELVETICA_BOLD, 11);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("PLAN DE FINANCIAMIENTO");
+                contenido.endText();
+                posicionY -= espacioEntreLineas * 2;
+
+                contenido.setFont(PDType1Font.HELVETICA, 10);
+                String[][] planPagos = {
+                    {"Precio de Venta", "$68,590"},
+                    {"Descuento del -12.0%", "-$8,230.80"},
+                    {"Precio Final", "$60,359.20"},
+                    {"Reserva (DESDE)", "$249"},
+                    {"Interés (8%)", "$5,448"} // Resaltar en azul oscuro
+                };
+
+                for (String[] fila : planPagos) {
+                    // Aplicar color azul oscuro a tasas/intereses
+                    if (fila[0].toLowerCase().contains("interés") || fila[0].contains("%")) {
+                        contenido.setNonStrokingColor(new Color(0, 0, 102)); // Azul oscuro
+                    } else {
+                        contenido.setNonStrokingColor(Color.BLACK);
+                    }
+
+                    contenido.beginText();
+                    contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                    contenido.showText(fila[0]);
+                    contenido.endText();
+
+                    contenido.beginText();
+                    contenido.newLineAtOffset(420, posicionY);
+                    contenido.showText(fila[1]);
+                    contenido.endText();
+                    posicionY -= espacioEntreLineas;
+                }
+                posicionY -= espacioEntreLineas;
+
+                // Cuotas mensuales (también con tasa en azul)
+                contenido.setNonStrokingColor(new Color(0, 0, 102));
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("Cuotas mensuales: 24 x $271/mes");
+                contenido.endText();
+
+                contenido.setNonStrokingColor(Color.BLACK);
+                contenido.beginText();
+                contenido.newLineAtOffset(420, posicionY);
+                contenido.showText("$5,279");
+                contenido.endText();
+                posicionY -= espacioEntreLineas * 2;
+
+                // ------------------------------
+                // 5. OPCIONES DE CRÉDITO (BLOQUES AZULES)
+                // ------------------------------
+                contenido.setFont(PDType1Font.HELVETICA_BOLD, 10);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("OPCIONES DE CRÉDITO - FINANCIACIÓN");
+                contenido.endText();
+                posicionY -= espacioEntreLineas * 2;
+
+                // Datos de los bloques (simulando la disposición en columnas)
+                contenido.setFont(PDType1Font.HELVETICA, 9);
+                String[][] opcionesCredito = {
+                    {"Banco Policial – MIV", "$273", "Banco de Venezuela – MIV", "$277", "Mi Casa Para Todos", "$271"},
+                    {"MIV – MI HOGAR", "$275", "Banco Provincial – MIV", "$271", "Construcción Propia", "$281"}
+                };
+
+                for (String[] fila : opcionesCredito) {
+                    contenido.setNonStrokingColor(new Color(0, 51, 102)); // Azul oscuro para bloques
+                    contenido.beginText();
+                    contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                    contenido.showText(fila[0] + " | " + fila[1]);
+                    contenido.endText();
+
+                    contenido.beginText();
+                    contenido.newLineAtOffset(200, posicionY);
+                    contenido.showText(fila[2] + " | " + fila[3]);
+                    contenido.endText();
+
+                    contenido.beginText();
+                    contenido.newLineAtOffset(400, posicionY);
+                    contenido.showText(fila[4] + " | " + fila[5]);
+                    contenido.endText();
+                    posicionY -= espacioEntreLineas;
+                }
+                posicionY -= espacioEntreLineas * 2;
+
+                // ------------------------------
+                // 6. PIE DE PÁGINA
+                // ------------------------------
+                contenido.setFont(PDType1Font.HELVETICA_OBLIQUE, 8);
+                contenido.setNonStrokingColor(Color.BLACK);
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("Datos del Cliente:");
+                contenido.endText();
+                posicionY -= espacioEntreLineas;
+
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("Nombre: _________________________ | Teléfono: _________________________");
+                contenido.endText();
+                posicionY -= espacioEntreLineas;
+
+                contenido.beginText();
+                contenido.newLineAtOffset(margenIzquierdo, posicionY);
+                contenido.showText("Correo: _________________________");
+                contenido.endText();
+            }
+
+            // Guardar documento final
+            documento.save("Cotizacion_Estructurada_Igual_Imagen.pdf");
+            System.out.println("Cotización generada con la estructura solicitada.");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}

@@ -1,0 +1,402 @@
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.stream.Collectors;
+
+// 🛡️ ENUM DE ROLES DE USUARIO
+enum RolUsuario {
+    ADMINISTRADOR,
+    USUARIO_COMERCIAL
+}
+
+// 👤 CLASE USUARIO
+class Usuario {
+    private String id;
+    private String nombre;
+    private String correo;
+    String contrasena;
+    private RolUsuario rol;
+
+    public Usuario(String id, String nombre, String correo, String contrasena, RolUsuario rol) {
+        this.id = id;
+        this.nombre = nombre;
+        this.correo = correo;
+        this.contrasena = contrasena;
+        this.rol = rol;
+    }
+
+    public boolean esAdmin() { return rol == RolUsuario.ADMINISTRADOR; }
+    public boolean puedeVerDashboard() { return esAdmin(); }
+    public boolean puedeAsignarLeads() { return esAdmin(); }
+    public String getNombre() { return nombre; }
+    public String getCorreo() { return correo; }
+    public RolUsuario getRol() { return rol; }
+}
+
+// 🏠 MODELO DE INMUEBLES Y PROYECTOS NEXORA
+class Inmueble {
+    private String proyecto;
+    private String modelo;
+    private int metrosCuadrados;
+    private double precio;
+
+    public Inmueble(String proyecto, String modelo, int metrosCuadrados, double precio) {
+        this.proyecto = proyecto;
+        this.modelo = modelo;
+        this.metrosCuadrados = metrosCuadrados;
+        this.precio = precio;
+    }
+
+    public String getProyecto() { return proyecto; }
+    public String getModelo() { return modelo; }
+    public int getMetrosCuadrados() { return metrosCuadrados; }
+    public double getPrecio() { return precio; }
+}
+
+// 📝 CLASE COTIZACIÓN (CONEXIÓN CON SISTEMA NEXORA)
+class Cotizacion {
+    private String idCotizacion;
+    private String idLead;
+    private String proyecto;
+    private String modelo;
+    private double precioTotal;
+    private String fechaCreacion;
+    private String estado;
+
+    public Cotizacion(String idCotizacion, String idLead, String proyecto, String modelo, double precioTotal, String fechaCreacion) {
+        this.idCotizacion = idCotizacion;
+        this.idLead = idLead;
+        this.proyecto = proyecto;
+        this.modelo = modelo;
+        this.precioTotal = precioTotal;
+        this.fechaCreacion = fechaCreacion;
+        this.estado = "GENERADA";
+    }
+
+    public String getIdCotizacion() { return idCotizacion; }
+    public double getPrecioTotal() { return precioTotal; }
+    public String getEstado() { return estado; }
+}
+
+// 🧑 CLASE LEAD / CLIENTE
+class Lead {
+    private String idLead;
+    private String nombreCliente;
+    private String telefono;
+    private String correo;
+    private String proyectoInteres;
+    private String usuarioAsignado;
+    private String estado;
+    private String fechaRegistro;
+
+    public Lead(String idLead, String nombreCliente, String telefono, String correo, String proyectoInteres, String fechaRegistro) {
+        this.idLead = idLead;
+        this.nombreCliente = nombreCliente;
+        this.telefono = telefono;
+        this.correo = correo;
+        this.proyectoInteres = proyectoInteres;
+        this.estado = "NUEVO";
+        this.fechaRegistro = fechaRegistro;
+    }
+
+    public String getIdLead() { return idLead; }
+    public String getNombreCliente() { return nombreCliente; }
+    public String getProyectoInteres() { return proyectoInteres; }
+    public String getUsuarioAsignado() { return usuarioAsignado; }
+    public String getEstado() { return estado; }
+    public void setUsuarioAsignado(String usuarioAsignado) { this.usuarioAsignado = usuarioAsignado; }
+    public void setEstado(String estado) { this.estado = estado; }
+}
+
+// 📋 CLASE GESTIÓN / SEGUIMIENTO
+class Gestion {
+    private String idGestion;
+    private String idLead;
+    private String tipo;
+    private String fechaHora;
+    private String descripcion;
+    private boolean recordatorioEnviado;
+
+    public Gestion(String idGestion, String idLead, String tipo, String fechaHora, String descripcion) {
+        this.idGestion = idGestion;
+        this.idLead = idLead;
+        this.tipo = tipo;
+        this.fechaHora = fechaHora;
+        this.descripcion = descripcion;
+        this.recordatorioEnviado = false;
+    }
+}
+
+// 🚀 MÓDULO PRINCIPAL CRM - SISTEMA NEXORA
+class CRM_Nexora {
+    private List<Inmueble> listaInmuebles;
+    private List<Lead> listaLeads;
+    private List<Cotizacion> listaCotizaciones;
+    private List<Gestion> listaGestiones;
+    private List<Usuario> listaUsuarios;
+
+    public CRM_Nexora() {
+        listaInmuebles = new ArrayList<>();
+        listaLeads = new ArrayList<>();
+        listaCotizaciones = new ArrayList<>();
+        listaGestiones = new ArrayList<>();
+        listaUsuarios = new ArrayList<>();
+        cargarProyectosNexora();
+        crearUsuarios();
+    }
+
+    private void cargarProyectosNexora() {
+        listaInmuebles.add(new Inmueble("PARQUE DEL SOL / VILLA GERANIO", "ALAMEDA CON LOZA", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("PARQUE DEL SOL / VILLA GERANIO", "GRAMAJAL CON LOZA", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("VIA DEL VIENTO", "STELLA CON LOZA", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("VIA DEL VIENTO", "PASEO 2", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("COSTA DE ROBLE", "AMARANTA", 54, 68100.00));
+        listaInmuebles.add(new Inmueble("COSTA DE ROBLE", "ANGELICA", 54, 68100.00));
+        listaInmuebles.add(new Inmueble("ROCOLIERTO 2 / ETAPAS 2,3,4", "ANABELIA", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("VIA DEL PORTO", "ALONDRA CON LOZA", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("FARO ALTO (9-3)", "PAULITTE", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("NOVIEMBRES", "LA MATA CON LOZA", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("RIBERA PARQUEO", "ALONDRA / VIVIENDA CON LOZA", 72, 72100.00));
+        listaInmuebles.add(new Inmueble("COSTA DE VIENTO", "ANTONELLA / VIVIENDA CON LOZA", 72, 72100.00));
+    }
+
+    private void crearUsuarios() {
+        listaUsuarios.add(new Usuario("U001", "Administrador Nexora", "admin@nexora.ec", "admin123", RolUsuario.ADMINISTRADOR));
+        listaUsuarios.add(new Usuario("U002", "Comercial 1", "comercial1@nexora.ec", "comercial1", RolUsuario.USUARIO_COMERCIAL));
+        listaUsuarios.add(new Usuario("U003", "Comercial 2", "comercial2@nexora.ec", "comercial2", RolUsuario.USUARIO_COMERCIAL));
+    }
+
+    public void agregarLead(Lead lead) { listaLeads.add(lead); }
+
+    public boolean asignarLead(String idLead, String usuarioAsignado) {
+        for (Lead l : listaLeads) {
+            if (l.getIdLead().equals(idLead)) {
+                l.setUsuarioAsignado(usuarioAsignado);
+                l.setEstado("ASIGNADO");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Cotizacion crearCotizacion(String idLead, String proyecto, String modelo) {
+        double precio = obtenerPrecio(proyecto, modelo);
+        String id = "COT-" + UUID.randomUUID().toString().substring(0, 6);
+        Cotizacion nueva = new Cotizacion(id, idLead, proyecto, modelo, precio, "2026-07-26");
+        listaCotizaciones.add(nueva);
+        return nueva;
+    }
+
+    public double obtenerPrecio(String proyecto, String modelo) {
+        for (Inmueble i : listaInmuebles) {
+            if (i.getProyecto().equals(proyecto) && i.getModelo().equals(modelo)) {
+                return i.getPrecio();
+            }
+        }
+        return 0.0;
+    }
+
+    public Map<String, Object> getDatosDashboard(Usuario usuario) {
+        Map<String, Object> datos = new HashMap<>();
+        datos.put("totalLeads", listaLeads.size());
+        datos.put("cotizacionesGeneradas", listaCotizaciones.size());
+        datos.put("proyectosDisponibles", listaInmuebles.size());
+        if (usuario.esAdmin()) {
+            long asignados = listaLeads.stream().filter(l -> l.getUsuarioAsignado() != null).count();
+            datos.put("leadsAsignados", asignados);
+        } else {
+            long misLeads = listaLeads.stream().filter(l -> usuario.getNombre().equals(l.getUsuarioAsignado())).count();
+            datos.put("misLeads", misLeads);
+        }
+        return datos;
+    }
+
+    public void sincronizarConGoogleDrive() {
+        System.out.println("✅ Sincronizado con Google Sheets / Drive - SISTEMA NEXORA");
+    }
+
+    public void enviarCorreoPlantilla(String idLead, String tipoPlantilla) {
+        System.out.println("📤 Correo enviado al Lead ID: " + idLead + " | Plantilla: " + tipoPlantilla);
+    }
+
+    public void enviarRecordatoriosVencidos() {
+        System.out.println("🔔 Recordatorios enviados por WhatsApp a gestiones vencidas");
+    }
+
+    public void cargarDesdeExcel(List<String[]> datosExcel) {
+        for (String[] fila : datosExcel) {
+            Lead nuevo = new Lead(UUID.randomUUID().toString(), fila[0], fila[1], fila[2], fila[3], fila[4]);
+            agregarLead(nuevo);
+        }
+        System.out.println("✅ " + datosExcel.size() + " Leads importados desde Excel");
+    }
+
+    public List<Lead> getLeadsPorUsuario(String nombreUsuario) {
+        return listaLeads.stream().filter(l -> nombreUsuario.equals(l.getUsuarioAsignado())).collect(Collectors.toList());
+    }
+
+    public List<Usuario> getUsuarios() { return listaUsuarios; }
+    public List<Inmueble> getListaInmuebles() { return listaInmuebles; }
+    public List<Lead> getListaLeads() { return listaLeads; }
+}
+
+// 🖥️ SISTEMA PRINCIPAL CON INTERFAZ
+public class SistemaNexoraCRM {
+    private static CRM_Nexora crm = new CRM_Nexora();
+    private static Scanner lector = new Scanner(System.in);
+    private static Usuario usuarioActual = null;
+
+    public static boolean iniciarSesion(String correo, String contrasena) {
+        for (Usuario u : crm.getUsuarios()) {
+            if (u.getCorreo().equals(correo) && u.contrasena.equals(contrasena)) {
+                usuarioActual = u;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void mostrarPantallaPrincipal() {
+        System.out.println("=========================================");
+        System.out.println("        📊 SISTEMA NEXORA - CRM          ");
+        System.out.println("      Gestión de Clientes y Cotizaciones");
+        System.out.println("=========================================");
+        System.out.println("Fecha: " + new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
+        if (usuarioActual != null) {
+            System.out.println("Usuario: " + usuarioActual.getNombre());
+            System.out.println("Rol: " + usuarioActual.getRol());
+        }
+        System.out.println("-----------------------------------------");
+    }
+
+    public static void mostrarMenu() {
+        while (true) {
+            mostrarPantallaPrincipal();
+            if (usuarioActual.esAdmin()) {
+                System.out.println("1. 📊 Panel de Control (Dashboard)");
+                System.out.println("2. 📥 Cargar Leads desde Excel");
+                System.out.println("3. 📋 Asignar Leads a Usuarios");
+                System.out.println("4. 📑 Lista Completa de Leads");
+                System.out.println("5. 💼 Generar Cotización (Nexora)");
+                System.out.println("6. 📤 Sincronizar con Google Drive");
+                System.out.println("7. ⏰ Ver Recordatorios");
+                System.out.println("8. 📄 Generar Reportes");
+                System.out.println("9. 🚪 Cerrar Sesión");
+            } else {
+                System.out.println("1. 📋 Mis Leads Asignados");
+                System.out.println("2. 💼 Nueva Cotización");
+                System.out.println("3. 📧 Enviar Correo / Plantilla");
+                System.out.println("4. ⏰ Ver Mis Gestiones");
+                System.out.println("5. 📤 Enviar Recordatorios");
+                System.out.println("6. 🚪 Cerrar Sesión");
+            }
+            System.out.println("-----------------------------------------");
+            System.out.print("Seleccione una opción: ");
+            int opcion = lector.nextInt();
+            lector.nextLine();
+            ejecutarOpcion(opcion);
+        }
+    }
+
+    public static void ejecutarOpcion(int opcion) {
+        switch (opcion) {
+            case 1:
+                if (usuarioActual.esAdmin()) mostrarDashboard();
+                else mostrarMisLeads();
+                break;
+            case 2:
+                if (usuarioActual.esAdmin()) cargarLeadsExcel();
+                else nuevaCotizacion();
+                break;
+            case 3:
+                if (usuarioActual.esAdmin()) asignarLeads();
+                else enviarCorreoPlantilla();
+                break;
+            case 4:
+                if (usuarioActual.esAdmin()) listaLeadsCompleta();
+                else verGestiones();
+                break;
+            case 5:
+                if (usuarioActual.esAdmin()) sincronizarGoogle();
+                else enviarRecordatorios();
+                break;
+            case 6:
+                if (usuarioActual.esAdmin()) generarReportes();
+                else System.out.println("✅ Operación completada");
+                break;
+            case 9:
+                if (usuarioActual.esAdmin()) {
+                    System.out.println("🔒 Sesión cerrada.");
+                    System.exit(0);
+                }
+            default:
+                System.out.println("⚠️ Opción no disponible");
+        }
+        pausa();
+    }
+
+    public static void mostrarDashboard() {
+        System.out.println("\n📊 PANEL DE CONTROL");
+        Map<String, Object> datos = crm.getDatosDashboard(usuarioActual);
+        System.out.println("• Total Leads: " + datos.get("totalLeads"));
+        System.out.println("• Leads Asignados: " + datos.get("leadsAsignados"));
+        System.out.println("• Cotizaciones: " + datos.get("cotizacionesGeneradas"));
+        System.out.println("• Proyectos: " + datos.get("proyectosDisponibles"));
+    }
+
+    public static void nuevaCotizacion() {
+        System.out.println("\n💼 NUEVA COTIZACIÓN");
+        System.out.print("ID Lead: "); String id = lector.nextLine();
+        System.out.print("Proyecto: "); String proy = lector.nextLine();
+        System.out.print("Modelo: "); String mod = lector.nextLine();
+        var cot = crm.crearCotizacion(id, proy, mod);
+        System.out.println("✅ Cotización CREADA: " + cot.getIdCotizacion() + " | Valor: $" + cot.getPrecioTotal());
+    }
+
+    public static void cargarLeadsExcel() {
+        System.out.println("\n📥 CARGA DESDE EXCEL");
+        List<String[]> datos = new ArrayList<>();
+        datos.add(new String[]{"Carlos Ruiz", "0987654321", "carlos@correo.ec", "VIA DEL VIENTO", "2026-07-26"});
+        datos.add(new String[]{"Ana Mendoza", "0991234567", "ana@correo.ec", "ROCOLIERTO 2", "2026-07-26"});
+        crm.cargarDesdeExcel(datos);
+    }
+
+    public static void asignarLeads() {
+        System.out.println("\n📋 ASIGNACIÓN DE LEADS");
+        crm.asignarLead("1", "Comercial 1");
+        System.out.println("✅ Asignación completada");
+    }
+
+    public static void sincronizarGoogle() { crm.sincronizarConGoogleDrive(); }
+    public static void generarReportes() { System.out.println("\n📄 REPORTE GUARDADO EN GOOGLE SHEETS"); }
+
+    public static void mostrarMisLeads() {
+        System.out.println("\n📋 MIS LEADS ASIGNADOS");
+        var lista = crm.getLeadsPorUsuario(usuarioActual.getNombre());
+        for (var l : lista) System.out.println("- " + l.getNombreCliente() + " | " + l.getProyectoInteres());
+    }
+
+    public static void enviarCorreoPlantilla() {
+        System.out.println("\n📧 CORREO ENVIADO CON PLANTILLA NEXORA");
+        crm.enviarCorreoPlantilla("L001", "COTIZACIÓN OFICIAL");
+    }
+
+    public static void enviarRecordatorios() { crm.enviarRecordatoriosVencidos(); }
+    public static void verGestiones() { System.out.println("\n⏰ GESTIONES PENDIENTES"); }
+    public static void listaLeadsCompleta() { System.out.println("\n📑 LISTA COMPLETA DE LEADS"); }
+
+    public static void pausa() {
+        System.out.println("\nPresione ENTER para continuar...");
+        lector.nextLine();
+    }
+
+    public static void main(String[] args) {
+        System.out.println("🔑 Iniciando SISTEMA NEXORA CRM...");
+        if (iniciarSesion("admin@nexora.ec", "admin123")) {
+            System.out.println("✅ Ingreso exitoso");
+            mostrarMenu();
+        } else {
+            System.out.println("❌ Error de acceso");
+        }
+    }
+}

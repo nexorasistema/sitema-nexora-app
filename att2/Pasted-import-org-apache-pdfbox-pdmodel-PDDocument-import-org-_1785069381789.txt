@@ -1,0 +1,122 @@
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import java.awt.Color;
+import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
+
+public class GenerarCotizacionImagenSoloUnaVez {
+
+    // CONFIGURACIÓN FIJA
+    private static final float MARGEN_IZQUIERDO = 40;
+    private static final float MARGEN_SUPERIOR = 40;
+    private static final float ALTURA_IMAGEN = 110;
+    private static final float ESPACIO_TRAS_IMAGEN = 20;
+    private static final float ALTURA_A4 = 842;
+    private static final float LIMITE_SALTO = 80;
+    private static final float ESPACIO_LINEA = 16;
+    private static PDImageXObject imagenCabecera;
+
+    public static void main(String[] args) {
+        try (PDDocument doc = new PDDocument()) {
+
+            // 1. CARGAR IMAGEN UNA SOLA VEZ
+            imagenCabecera = PDImageXObject.createFromFile("cabecera_cotizacion.png", doc);
+
+            // 2. DATOS REALES DE LA COTIZACIÓN
+            List<String> contenido = new ArrayList<>();
+            contenido.add("CONSTRUCCIÓN KATTYA");
+            contenido.add("Cotización Inmobiliaria – 24 de Julio de 2026");
+            contenido.add("");
+            contenido.add("DESCRIPCIÓN: MÓDULO 2 KATTYA CON LOSA");
+            contenido.add("Proyecto: Bosquetto 2");
+            contenido.add("Modelo: Kattya con Losa");
+            contenido.add("Área total: 5730 m² | Precio unitario: $97.72/m²");
+            contenido.add("Precio total: $68,590");
+            contenido.add("");
+            contenido.add("PLAN DE FINANCIAMIENTO");
+            contenido.add("Precio de venta: $68,590");
+            contenido.add("Descuento 12%: -$8,230.80");
+            contenido.add("Precio final: $60,359.20");
+            contenido.add("Reserva: $249");
+            contenido.add("Interés anual: 8% | Total intereses: $5,448");
+            contenido.add("Cuotas mensuales: 24 cuotas de $271");
+            contenido.add("Total a pagar: $52,735");
+            contenido.add("");
+            contenido.add("OPCIONES DE CRÉDITO");
+            contenido.add("• Banco Policial – MIV: $273/mes");
+            contenido.add("• Banco de Venezuela – MIV: $277/mes");
+            contenido.add("• Banco Provincial – MIV: $271/mes");
+            contenido.add("• Mi Casa Para Todos: $271/mes");
+            contenido.add("• Construcción Propia: $281/mes");
+            // Agrega más líneas aquí para probar cotización larga
+
+            // 3. GENERAR PDF
+            crearDocumento(doc, contenido);
+
+            doc.save("Cotizacion_ImagenUnaVez.pdf");
+            System.out.println("✅ Listo: imagen solo en la primera hoja");
+
+        } catch (IOException e) {
+            System.err.println("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static void crearDocumento(PDDocument doc, List<String> lineas) throws IOException {
+        PDPage pagina = new PDPage(PDRectangle.A4);
+        doc.addPage(pagina);
+        float posY = ALTURA_A4 - MARGEN_SUPERIOR;
+        boolean primeraHoja = true; // Controla si dibujar la imagen
+
+        try (PDPageContentStream flujo = new PDPageContentStream(doc, pagina)) {
+
+            // SOLO DIBUJA IMAGEN SI ES LA PRIMERA HOJA
+            if (primeraHoja) {
+                flujo.drawImage(imagenCabecera, MARGEN_IZQUIERDO, ALTURA_A4 - MARGEN_SUPERIOR - ALTURA_IMAGEN, 515, ALTURA_IMAGEN);
+                posY -= ALTURA_IMAGEN + ESPACIO_TRAS_IMAGEN;
+                primeraHoja = false; // Ya no se repite
+            }
+
+            flujo.setFont(PDType1Font.HELVETICA, 10);
+
+            for (String linea : lineas) {
+                // SALTO DE PÁGINA SIN VOLVER A PONER IMAGEN
+                if (posY < LIMITE_SALTO) {
+                    flujo.close();
+                    pagina = new PDPage(PDRectangle.A4);
+                    doc.addPage(pagina);
+
+                    PDPageContentStream nuevoFlujo = new PDPageContentStream(doc, pagina);
+                    nuevoFlujo.setFont(PDType1Font.HELVETICA, 10);
+                    posY = ALTURA_A4 - MARGEN_SUPERIOR; // Empieza desde arriba sin imagen
+
+                    escribirLinea(nuevoFlujo, linea, posY);
+                    posY -= ESPACIO_LINEA;
+                    nuevoFlujo.close();
+                    continue;
+                }
+
+                escribirLinea(flujo, linea, posY);
+                posY -= ESPACIO_LINEA;
+            }
+        }
+    }
+
+    // TEXTO CON AZUL OSCURO EN INTERESES
+    private static void escribirLinea(PDPageContentStream cs, String texto, float posY) throws IOException {
+        if (texto.toLowerCase().contains("interés") || texto.contains("%") || texto.contains("cuota")) {
+            cs.setNonStrokingColor(new Color(0, 0, 102));
+        } else {
+            cs.setNonStrokingColor(Color.BLACK);
+        }
+        cs.beginText();
+        cs.newLineAtOffset(MARGEN_IZQUIERDO, posY);
+        cs.showText(texto);
+        cs.endText();
+    }
+}

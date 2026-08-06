@@ -1,0 +1,60 @@
+java
+Run
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import java.awt.Color;
+import java.io.IOException;
+
+public class GenerarCotizacion {
+    public static void main(String[] args) {
+        // 1. Crear documento y definir hoja A4
+        try (PDDocument documento = new PDDocument()) {
+            PDPage pagina = new PDPage(PDRectangle.A4); // Establece tamaño A4
+            documento.addPage(pagina);
+
+            try (PDPageContentStream contenido = new PDPageContentStream(documento, pagina)) {
+                // Datos de la cotización extraídos del documento
+                String[] datosCotizacion = {
+                    "Bosquetto2 E 23y 4 d",
+                    "FC DELTA: $68,390",
+                    "Kattya con Losa - 5730 m²",
+                    "Precio unitario: $97.72/m²",
+                    "Precio de venta: $68,300",
+                    "Importe final: $68,190",
+                    "Reserva: $249",
+                    "Interés: 8%", // Dato a resaltar
+                    "Cuota mensual: $2,452.17/mes",
+                    "Total a pagar: $52,735"
+                };
+
+                contenido.setFont(PDType1Font.HELVETICA, 12);
+                float posicionY = 750; // Posición vertical inicial en hoja A4
+
+                for (String linea : datosCotizacion) {
+                    // 2. Definir color: azul oscuro solo para tasas/intereses
+                    if (linea.toLowerCase().contains("interés") || linea.contains("%")) {
+                        contenido.setNonStrokingColor(new Color(0, 0, 102)); // Azul oscuro RGB
+                    } else {
+                        contenido.setNonStrokingColor(Color.BLACK); // Resto en negro
+                    }
+
+                    contenido.beginText();
+                    contenido.newLineAtOffset(50, posicionY); // Margen izquierdo
+                    contenido.showText(linea);
+                    contenido.endText();
+                    posicionY -= 20; // Espaciado entre líneas
+                }
+            }
+
+            // Guardar documento
+            documento.save("Cotizacion_Formateada.pdf");
+            System.out.println("Cotización generada correctamente en formato A4.");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
