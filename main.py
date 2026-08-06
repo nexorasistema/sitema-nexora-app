@@ -1,6 +1,8 @@
 from flask import Flask, render_template, send_from_directory
 
-app = Flask(_name_, template_folder='nexora', static_folder='nexora')
+app = Flask(_name_, 
+            template_folder='nexora',
+            static_folder='nexora')
 
 @app.route('/')
 def inicio():
